@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dual-Boot Portable Windows 11 & Kali Linux Guide</title>
+  <style>
+    body { font-family: Arial, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height:1.6; margin:0; padding:0; background:#f7f7fb; color:#111; }
+    .wrap { max-width:980px; margin:36px auto; background:#fff; padding:28px 36px; box-shadow:0 6px 24px rgba(0,0,0,0.08); border-radius:8px; }
+    h1,h2,h3 { color:#0b4a8b; margin-top:1.1em; }
+    pre { background:#0f1724; color:#dbeafe; padding:12px; border-radius:6px; overflow:auto; }
+    a { color:#0b63b3; text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    ul { margin-top:0.25em; }
+    .toc { background:#f0f6ff; padding:14px; border-radius:6px; }
+    .note { background:#fff4d6; padding:10px; border-radius:6px; margin:8px 0; }
+    footer { margin-top:28px; font-size:0.9rem; color:#555; text-align:center; }
+    code { background:#eef6ff; padding:2px 5px; border-radius:4px; font-family:monospace; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Dual-Boot Portable Windows 11 &amp; Kali Linux on an External M.2 SSD</h1>
+    <p>A complete, risk-free, step-by-step guide to running a fully functional <strong>Portable Windows 11 (Windows To Go)</strong> and a dedicated <strong>Kali Linux</strong> installation on a single external M.2 NVMe SSD. Your host PC's internal drive is never modified — plug the external SSD into almost any PC to boot either OS.</p>
+
+    <hr>
+
+    <h2>Table of Contents</h2>
+    <div class="toc">
+      <ol>
+        <li><a href="#prerequisites--hardware-requirements">Prerequisites &amp; Hardware Requirements</a></li>
+        <li><a href="#step-1-flash-portable-windows-11-to-the-external-m2-ssd">Step 1: Flash Portable Windows 11</a></li>
+        <li><a href="#step-2-shrink-the-external-drive-to-create-space-for-linux">Step 2: Shrink Drive</a></li>
+        <li><a href="#step-3-prepare-the-kali-linux-installer-usb">Step 3: Prepare Kali USB</a></li>
+        <li><a href="#step-4-install-kali-linux-into-the-external-ssd-free-space">Step 4: Install Kali</a></li>
+        <li><a href="#step-5-configure-universal-efi-bootloader-grub-removable-mode">Step 5: Configure GRUB (Removable Mode)</a></li>
+        <li><a href="#troubleshooting--tips">Troubleshooting &amp; Tips</a></li>
+      </ol>
+    </div>
+
+    <h2 id="prerequisites--hardware-requirements">📋 Prerequisites &amp; Hardware Requirements</h2>
+    <ul>
+      <li><strong>External M.2 NVMe SSD</strong> (256 GB minimum recommended; e.g., 150 GB for Windows + 100 GB for Kali).</li>
+      <li><strong>High-Speed USB Enclosure:</strong> USB 3.2 Gen 2 (10Gbps) or Type-C NVMe enclosure to avoid bottlenecks.</li>
+      <li><strong>1x Separate USB Flash Drive</strong> (8 GB or larger) for Kali installer media.</li>
+      <li><strong>Host PC</strong> running Windows 11 with <strong>Secure Boot disabled</strong> in BIOS.</li>
+      <li><strong>Software Downloads:</strong>
+        <ul>
+          <li><a href="https://www.microsoft.com/software-download/windows11" target="_blank" rel="noopener">Windows 11 ISO</a></li>
+          <li><a href="https://www.kali.org/get-kali/#kali-installer-images" target="_blank" rel="noopener">Kali Linux Installer ISO</a></li>
+          <li><a href="https://rufus.ie/" target="_blank" rel="noopener">Rufus</a> (Portable recommended)</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h2 id="step-1-flash-portable-windows-11-to-the-external-m2-ssd">Step 1: Flash Portable Windows 11 to the External M.2 SSD</h2>
+    <div class="note">⚠️ <strong>WARNING:</strong> This will erase everything on your external M.2 SSD.</div>
+    <ol>
+      <li>Connect your external M.2 SSD via USB.</li>
+      <li>Open <strong>Rufus</strong>.</li>
+      <li>Enable <em>Show advanced drive properties</em> and check <em>List USB Hard Drives</em> so the M.2 SSD appears.</li>
+      <li>Select your external M.2 SSD under <strong>Device</strong>.</li>
+      <li>Click <strong>SELECT</strong> and choose your Windows 11 ISO.</li>
+      <li>Change <strong>Image option</strong> to <strong>Windows To Go</strong>.</li>
+      <li>Ensure <strong>Partition scheme</strong> = GPT and <strong>Target system</strong> = UEFI (non CSM).</li>
+      <li>Click <strong>START</strong>.</li>
+      <li>When prompted, choose your Windows edition (e.g., Windows 11 Pro).</li>
+      <li>In the final warning, check <strong>Prevent Windows To Go from accessing internal disks</strong> and click OK.</li>
+      <li>Wait for Rufus to finish (status shows <strong>READY</strong>).</li>
+    </ol>
+
+    <h2 id="step-2-shrink-the-external-drive-to-create-space-for-linux">Step 2: Shrink the External Drive to Create Space for Linux</h2>
+    <ol>
+      <li>Right-click Start → <strong>Disk Management</strong>.</li>
+      <li>Locate your external M.2 SSD (verify by total size).</li>
+      <li>Right-click the large NTFS partition and choose <strong>Shrink Volume</strong>.</li>
+      <li>Enter the space for Kali in MB (e.g., <code>102400</code> for ~100 GB) and click <strong>Shrink</strong>.</li>
+      <li>You should now see an <strong>Unallocated</strong> black block next to the Windows partition. Close Disk Management.</li>
+    </ol>
+
+    <h2 id="step-3-prepare-the-kali-linux-installer-usb">Step 3: Prepare the Kali Linux Installer USB</h2>
+    <ol>
+      <li>Plug in your separate 8 GB+ USB flash drive.</li>
+      <li>Open <strong>Rufus</strong> and select the USB flash drive (not your M.2 SSD).</li>
+      <li>Click <strong>SELECT</strong> → choose the Kali Linux Installer ISO.</li>
+      <li>Click <strong>START</strong>. If asked to download syslinux files, click <strong>Yes</strong>. Choose <em>Write in ISO Image mode</em> if prompted.</li>
+      <li>Wait for Rufus. Keep both the external M.2 SSD and Kali USB plugged in.</li>
+      <li>Restart the PC, press your BIOS boot key (F2, F12, Del, Esc), ensure Secure Boot is disabled, and boot the Kali USB. Choose <strong>Graphical install</strong>.</li>
+    </ol>
+
+    <h2 id="step-4-install-kali-linux-into-the-external-ssd-free-space">Step 4: Install Kali Linux Into the External SSD Free Space</h2>
+    <ol>
+      <li>Follow Kali installation prompts (Language, Location, Keyboard, User, Timezone).</li>
+      <li>At <strong>Partition disks</strong>:
+        <ul>
+          <li>Select <em>Guided - use the largest continuous free space</em>.</li>
+          <li><strong>CRITICAL CHECK:</strong> Ensure the installer selects your external M.2 SSD (verify size/model) and <strong>NOT</strong> your internal drive (e.g., /dev/nvme0n1).</li>
+          <li>Choose <em>All files in one partition</em> (recommended for new users).</li>
+          <li>Select <em>Finish partitioning and write changes to disk</em>, confirm Yes.</li>
+        </ul>
+      </li>
+      <li>On <strong>Software selection</strong>, keep defaults (Xfce and standard tools).</li>
+      <li>When finished, keep the USB plugged in, reboot, and use your Boot Menu key to boot into Kali on the external SSD.</li>
+    </ol>
+
+    <h2 id="step-5-configure-universal-efi-bootloader-grub-removable-mode">Step 5: Configure Universal EFI Bootloader (GRUB Removable Mode)</h2>
+    <p>To boot on any computer without relying on host NVRAM and to provide a single GRUB menu for both OSes, run the following on Kali (adjust partition names as needed):</p>
+    <pre><code># Update package lists and install required utilities
+sudo apt update && sudo apt install -y grub-efi-amd64-signed shim-signed
+
+# Identify your external SSD's EFI partition (example)
+sudo lsblk
+
+# Mount partitions as needed, then install GRUB in removable mode:
+sudo grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=kali --removable
+
+# Update GRUB to detect Portable Windows and other entries:
+sudo update-grub
+</code></pre>
+    <p><em>Tip:</em> If Windows doesn't appear in GRUB, mount the Windows partition (e.g., <code>sudo mkdir -p /mnt/win &amp;&amp; sudo mount /dev/sdx1 /mnt/win</code>) and re-run <code>sudo update-grub</code>.</p>
+
+    <h2 id="troubleshooting--tips">💡 Troubleshooting &amp; Tips</h2>
+    <ul>
+      <li><strong>Host Internal Drive Protection:</strong> Because you checked "Prevent Windows To Go from accessing internal disks" earlier, the host internal drive stays isolated.</li>
+      <li><strong>Time Desync Between Windows &amp; Linux:</strong> If the clock shifts when switching OSes, run on Kali:
+        <pre><code>timedatectl set-local-rtc 1 --adjust-system-clock</code></pre>
+      </li>
+      <li><strong>Wi-Fi Not Working in Kali?</strong> Many laptop Wi‑Fi chips require proprietary firmware; consider an external USB Wi‑Fi adapter (e.g., Alfa AWUS036ACS) if internal card drivers are unavailable.</li>
+    </ul>
+
+    <footer>
+      Converted into a single-page HTML guide. Links point to upstream resources (Windows 11, Kali, Rufus).
+    </footer>
+  </main>
+</body>
+</html>
